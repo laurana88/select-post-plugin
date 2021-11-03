@@ -25,7 +25,14 @@ import save from './save';
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-registration/
  */
+
+
 registerBlockType('laura/select-post', {
+	attributes: {
+        selectedPost: {
+            type: 'number',
+        },
+    },
 	/**
 	 * @see ./edit.js
 	 */

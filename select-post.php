@@ -21,6 +21,37 @@
  * @see https://developer.wordpress.org/block-editor/tutorials/block-tutorial/writing-your-first-block-type/
  */
 function laura_select_post_block_init() {
-	register_block_type( __DIR__ );
+	register_block_type( __DIR__,
+		[
+			'render_callback' => 'selectpostrender',
+			'attributes' => [
+				'selectedPost' => [
+					'type' => 'number',
+					'default' => 0
+				]
+			]
+		] 		
+	);
 }
 add_action( 'init', 'laura_select_post_block_init' );
+
+function selectpostrender ($attributes, $content) {
+	$str = '';
+	if ($attributes['selectedPost'] > 0) {
+		$post = get_post($attributes['selectedPost']);
+		$featured_image = get_post_thumbnail_id($post);
+		$size = 'large';
+		$imageurl = wp_get_attachment_image_src( $featured_image, $size)[0];
+
+		if (!$post) {
+			return "there is no post with that ID";
+		}
+		$str = '<div class = "selectpostrenderblock">';
+		$str .= '<a href="' . get_the_permalink($post) . '">';
+		$str .= '<img src="' . $imageurl . '">';
+		$str .= '<h3>' . get_the_title($post) . '</h3>';
+		$str .= '</a>';
+		$str .= '</div>';
+	}
+	return $str;
+}

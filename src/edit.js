@@ -1,38 +1,86 @@
-/**
- * Retrieves the translation of text.
- *
- * @see https://developer.wordpress.org/block-editor/packages/packages-i18n/
- */
 import { __ } from '@wordpress/i18n';
-
-/**
- * React hook that is used to mark the block wrapper element.
- * It provides all the necessary props like the class name.
- *
- * @see https://developer.wordpress.org/block-editor/packages/packages-block-editor/#useBlockProps
- */
-import { useBlockProps } from '@wordpress/block-editor';
-
-/**
- * Lets webpack process CSS, SASS or SCSS files referenced in JavaScript files.
- * Those files can contain any CSS code that gets applied to the editor.
- *
- * @see https://www.npmjs.com/package/@wordpress/scripts#using-css
- */
+import { RichText, useBlockProps, BlockControls } from '@wordpress/block-editor';
+import {TextControl, ToolbarButton, Placeholder, SelectControl} from '@wordpress/components';
+import { useState } from '@wordpress/element'
+import { useSelect, select } from '@wordpress/data';
 import './editor.scss';
 
-/**
- * The edit function describes the structure of your block in the context of the
- * editor. This represents what the editor will render when the block is used.
- *
- * @see https://developer.wordpress.org/block-editor/developers/block-api/block-edit-save/#edit
- *
- * @return {WPElement} Element to render.
- */
-export default function Edit() {
-	return (
-		<p {...useBlockProps()}>
-			{__('Select Post – hello from the editor!', 'select-post')}
-		</p>
-	);
+
+ export default function Edit( { attributes, setAttributes } ) {
+
+    const [editMode, setEditMode] = useState(true);
+
+    const getBlockControls = () => {
+		return (
+			<BlockControls>
+                <ToolbarButton
+                        label={ editMode ? "Preview" : "Edit" }
+                        icon={ editMode ? "format-image" : "edit" }
+                        className="my-custom-button"
+                        onClick={() => {setEditMode(editMode ? false : true);}
+                        }
+                />
+		    </BlockControls>
+		);
+	}
+
+    const currentPostId = select('core/editor').getCurrentPostId();
+    const query = {
+		per_page: -1,
+		exclude: currentPostId
+	}
+
+    const { posts } = useSelect( ( select ) => {
+            return {
+                posts: select( 'core' ).getEntityRecords('postType', 'post', query),
+            };
+    });
+
+    let choices = [];
+	let currentPost = [];
+
+	const findPost = (item) => {
+		if (item.id === attributes.selectedPost) {
+			return item;
+		}
+	}
+
+    if (posts) {
+        posts.forEach(post => {
+            choices.push({value: post.id, label: post.title.rendered});
+        });
+		currentPost = posts.filter(findPost);
+    } else {
+        choices.push({value:0, label:"Loading"});
+    }
+
+	console.log("array of posts", posts);
+	console.log('current post', currentPost);
+
+    return (
+        [
+        getBlockControls(),
+        <div { ...useBlockProps()} >
+            {editMode && 
+                <SelectControl
+                    label="Selected Post"
+                    options={choices}
+                    value={attributes.selectedPost}
+                    onChange={(value) => setAttributes({selectedPost: parseInt(value)})}
+                />
+            }
+            {!editMode && 
+                <Placeholder>
+                    {/* <SelectControl
+                        label="Selected Post"
+                        options={choices}
+                        value={attributes.selectedPost}
+                        onChange={(value) => setAttributes({selectedPost: parseInt(value)})}
+                    /> */}
+					<h3>{currentPost[0].title.rendered}</h3>
+                </Placeholder>
+            }
+        </div>
+    ]
+    );
 }
