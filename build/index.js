@@ -23,6 +23,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_data__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/data */ "@wordpress/data");
 /* harmony import */ var _wordpress_data__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_wordpress_data__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var _editor_scss__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./editor.scss */ "./src/editor.scss");
+/* harmony import */ var _wordpress_core_data__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @wordpress/core-data */ "@wordpress/core-data");
+/* harmony import */ var _wordpress_core_data__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(_wordpress_core_data__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lodash */ "lodash");
+/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_7__);
+
+
 
 
 
@@ -61,13 +67,6 @@ function Edit(_ref) {
     };
   });
   let choices = [];
-  let currentPost = [];
-
-  const findPost = item => {
-    if (item.id === attributes.selectedPost) {
-      return item;
-    }
-  };
 
   if (posts) {
     posts.forEach(post => {
@@ -76,7 +75,6 @@ function Edit(_ref) {
         label: post.title.rendered
       });
     });
-    currentPost = posts.filter(findPost);
   } else {
     choices.push({
       value: 0,
@@ -84,8 +82,30 @@ function Edit(_ref) {
     });
   }
 
-  console.log("array of posts", posts);
-  console.log('current post', currentPost);
+  const currentPost = !posts ? posts : posts.filter(item => item.id === attributes.selectedPost);
+  const {
+    postToDisplay
+  } = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_4__.useSelect)(select => {
+    const {
+      getMedia
+    } = select(_wordpress_core_data__WEBPACK_IMPORTED_MODULE_6__.store);
+    return {
+      postToDisplay: !Array.isArray(currentPost) ? currentPost : currentPost.map(post => {
+        const image = getMedia(post.featured_media);
+        console.log('Image', image);
+        let featuredImageUrl = (0,lodash__WEBPACK_IMPORTED_MODULE_7__.get)(image, ['media_details', 'sizes', 'medium', 'source_url'], null);
+
+        if (!featuredImageUrl) {
+          featuredImageUrl = (0,lodash__WEBPACK_IMPORTED_MODULE_7__.get)(image, 'source_url', null);
+        }
+
+        return { ...post,
+          featuredImageUrl
+        };
+      })
+    };
+  });
+  console.log('WITH MEDIA', postToDisplay);
   return [getBlockControls(), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", (0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.useBlockProps)(), editMode && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
     label: "Selected Post",
     options: choices,
@@ -93,7 +113,9 @@ function Edit(_ref) {
     onChange: value => setAttributes({
       selectedPost: parseInt(value)
     })
-  }), !editMode && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Placeholder, null, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", null, currentPost[0].title.rendered)))];
+  }), !editMode && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Placeholder, null, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", null, postToDisplay[0].title.rendered), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
+    src: postToDisplay[0].featuredImageUrl
+  })))];
 }
 
 /***/ }),
@@ -220,6 +242,16 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "lodash":
+/*!*************************!*\
+  !*** external "lodash" ***!
+  \*************************/
+/***/ (function(module) {
+
+module.exports = window["lodash"];
+
+/***/ }),
+
 /***/ "@wordpress/block-editor":
 /*!*************************************!*\
   !*** external ["wp","blockEditor"] ***!
@@ -247,6 +279,16 @@ module.exports = window["wp"]["blocks"];
 /***/ (function(module) {
 
 module.exports = window["wp"]["components"];
+
+/***/ }),
+
+/***/ "@wordpress/core-data":
+/*!**********************************!*\
+  !*** external ["wp","coreData"] ***!
+  \**********************************/
+/***/ (function(module) {
+
+module.exports = window["wp"]["coreData"];
 
 /***/ }),
 

@@ -4,6 +4,8 @@ import {TextControl, ToolbarButton, Placeholder, SelectControl} from '@wordpress
 import { useState } from '@wordpress/element'
 import { useSelect, select } from '@wordpress/data';
 import './editor.scss';
+import { store as coreStore } from '@wordpress/core-data';
+import { get } from 'lodash';
 
 
  export default function Edit( { attributes, setAttributes } ) {
@@ -31,31 +33,62 @@ import './editor.scss';
 	}
 
     const { posts } = useSelect( ( select ) => {
-            return {
-                posts: select( 'core' ).getEntityRecords('postType', 'post', query),
-            };
-    });
+		return {
+			posts: select( 'core' ).getEntityRecords('postType', 'post', query),
+		};
+    });	
 
     let choices = [];
-	let currentPost = [];
 
-	const findPost = (item) => {
-		if (item.id === attributes.selectedPost) {
-			return item;
-		}
-	}
 
     if (posts) {
         posts.forEach(post => {
             choices.push({value: post.id, label: post.title.rendered});
         });
-		currentPost = posts.filter(findPost);
     } else {
         choices.push({value:0, label:"Loading"});
     }
 
-	console.log("array of posts", posts);
-	console.log('current post', currentPost);
+
+	const currentPost = !posts 
+		? posts 
+		: posts.filter(item => item.id === attributes.selectedPost);
+
+
+	const { postToDisplay } = useSelect( (select)  => {
+
+		const { getMedia } = select(coreStore);
+
+		return { postToDisplay: ! Array.isArray( currentPost )
+			? currentPost
+			: currentPost.map( ( post ) => {
+
+				const image = getMedia( post.featured_media );
+				console.log('Image', image);
+
+				let featuredImageUrl = get(
+					image,
+					[
+						'media_details',
+						'sizes',
+						'medium',
+						'source_url',
+					],
+					null
+				);
+				if ( ! featuredImageUrl ) {
+					featuredImageUrl = get( image, 'source_url', null );
+				}
+
+				return { ...post, featuredImageUrl };
+			} ),
+		};
+	});
+
+	console.log('WITH MEDIA', postToDisplay);
+
+
+
 
     return (
         [
@@ -77,7 +110,8 @@ import './editor.scss';
                         value={attributes.selectedPost}
                         onChange={(value) => setAttributes({selectedPost: parseInt(value)})}
                     /> */}
-					<h3>{currentPost[0].title.rendered}</h3>
+					<h3>{postToDisplay[0].title.rendered}</h3>
+					<img src={postToDisplay[0].featuredImageUrl} />
                 </Placeholder>
             }
         </div>
