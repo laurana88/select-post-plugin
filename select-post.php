@@ -24,34 +24,59 @@ function laura_select_post_block_init() {
 	register_block_type( __DIR__,
 		[
 			'render_callback' => 'selectpostrender',
-			'attributes' => [
-				'selectedPost' => [
-					'type' => 'number',
-					'default' => 0
-				]
-			]
 		] 		
 	);
 }
 add_action( 'init', 'laura_select_post_block_init' );
 
 function selectpostrender ($attributes, $content) {
-	$str = '';
-	if ($attributes['selectedPost'] > 0) {
-		$post = get_post($attributes['selectedPost']);
-		$featured_image = get_post_thumbnail_id($post);
-		$size = 'large';
-		$imageurl = wp_get_attachment_image_src( $featured_image, $size)[0];
 
-		if (!$post) {
-			return "there is no post with that ID";
-		}
-		$str = '<div class = "selectpostrenderblock">';
-		$str .= '<a href="' . get_the_permalink($post) . '">';
-		$str .= '<img src="' . $imageurl . '">';
-		$str .= '<h3>' . get_the_title($post) . '</h3>';
-		$str .= '</a>';
-		$str .= '</div>';
+	// This variable builds the HTML
+	$post_markup = '';
+
+	// This is the post selected on the edit screen
+	$selectedpost = get_post($attributes['selectedPost']);
+
+	// if a post is selected, checks the post ID. If not, displays text with no posts.
+	if ($selectedpost > 0) {
+
+		// Wrapper for the whole post
+		$post_markup .= '<div class="select-post">';
+
+		// Assigns the post's URL
+		$post_link = esc_url( get_permalink( $selectedpost ) );
+
+		// Assigns the post's featured image, and adds it to the HTML.
+		// Links featured image to the post as well
+		$featured_image = get_the_post_thumbnail($selectedpost);
+		$featured_image = sprintf(
+				'<a href="%1$s">%2$s</a>',
+				$post_link,
+				$featured_image
+			);
+		$post_markup .= sprintf(
+			'<div class="%1$s">%2$s</div>',
+			'select-post-image',
+			$featured_image
+		);
+
+		// Assigns the post's title and adds it to HTML.
+		// Links the title to the post as well
+		$title = get_the_title( $selectedpost );
+		$post_markup .= sprintf(
+			'<h3 class="select-post-heading"><a href="%1$s">%2$s</a></h3>',
+			$post_link,
+			$title
+		);
+
+		// Closes the HTML
+		$post_markup .= "</div>\n";
+		
+		// Displays the HTML
+		return sprintf(
+			$post_markup
+		);
+	} else {
+		return "<p>There are no posts that meet your criteria.</p> ";
 	}
-	return $str;
 }
